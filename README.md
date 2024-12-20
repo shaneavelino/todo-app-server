@@ -1,4 +1,3 @@
-````markdown
 # Task Management API
 
 A RESTful API for managing tasks, built with Express.js, TypeScript, and Prisma.
@@ -6,18 +5,17 @@ A RESTful API for managing tasks, built with Express.js, TypeScript, and Prisma.
 ## Prerequisites
 
 - Node.js (v16 or higher)
-- npm or yarn
-- PostgreSQL database
+- npm or yarn (bun not tested)
+- MySQL database
 
 ## Setup
 
 1. Clone the repository
 
 ```bash
-git clone <repository-url>
-cd task-management-api
+git clone https://github.com/shaneavelino/todo-app-server
+cd todo-app-server
 ```
-````
 
 2. Install dependencies
 
@@ -26,11 +24,12 @@ npm install
 ```
 
 3. Environment Setup
-   Create a `.env` file in the root directory with the following variables:
+ - Connect to your locally running MySQL service
+ - Create a `.env` file in the root directory with the following variables or rename the `.env.example` file and replace values with your user credentials:
 
 ```env
 PORT=3000
-DATABASE_URL="postgresql://user:password@localhost:5432/taskdb?schema=public"
+DATABASE_URL="mysql://${user}:${password}@localhost:3306/${dbname}"
 ```
 
 4. Database Setup
@@ -219,11 +218,4 @@ Ok to proceed? (y)
 
 Error: (0 , USe.isError) is not a function
 ```
-
-Downgrade Node to v20.18.0 if current version >20.18.0
-
-https://github.com/prisma/prisma/issues/25560
-
-```
-
-```
+[Downgrade Node to v20.18.0 if current version >20.18.0](https://github.com/prisma/prisma/issues/25560)
