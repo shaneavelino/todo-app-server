@@ -1,6 +1,7 @@
-// src/controllers/taskController.ts
 import { Request, Response } from "express";
 import { prisma } from "../config/prisma";
+import Fuse from "fuse.js";
+
 import {
   createTaskSchema,
   updateTaskSchema,
@@ -53,12 +54,70 @@ export const getTaskById = async (
   }
 };
 
+// export const createTask = async (
+//   req: Request,
+//   res: Response
+// ): Promise<void> => {
+//   try {
+//     const validatedData = createTaskSchema.parse(req.body);
+//     const task = await prisma.task.create({
+//       data: validatedData,
+//     });
+//     res.status(201).json(task);
+//   } catch (error) {
+//     if (error instanceof z.ZodError) {
+//       res.status(400).json({
+//         error: "Invalid request",
+//         details: error.errors.map((err) => ({
+//           field: err.path.join("."),
+//           message: err.message,
+//         })),
+//       });
+//     }
+//     res.status(500).json({ error: "Unable to create task" });
+//   }
+// };
+
+// const createTaskSchema = z.object({
+//   title: z.string(),
+//   description: z.string(),
+//   // Add other task fields
+// });
+
+// Fuse.js options
+const fuseOptions = {
+  keys: ["title", "color"],
+  threshold: 0.3,
+  includeScore: true,
+};
+
 export const createTask = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
     const validatedData = createTaskSchema.parse(req.body);
+
+    // Check if similar tasks exist
+    const existingTasks = await prisma.task.findMany();
+    const fuse = new Fuse(existingTasks, fuseOptions);
+
+    const searchResults = fuse.search(validatedData.title);
+    const similarTasks = searchResults.filter(
+      (result) => result.score && result.score < 0.3
+    );
+
+    if (similarTasks.length > 0) {
+      res.status(200).json({
+        message: "Similar tasks found",
+        similarTasks: similarTasks.map((result) => ({
+          task: result.item,
+          similarity: result.score,
+        })),
+      });
+      return;
+    }
+
     const task = await prisma.task.create({
       data: validatedData,
     });
@@ -72,8 +131,35 @@ export const createTask = async (
           message: err.message,
         })),
       });
+      return;
     }
     res.status(500).json({ error: "Unable to create task" });
+  }
+};
+
+export const searchTasks = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { query } = req.query;
+    if (!query || typeof query !== "string") {
+      res.status(400).json({ error: "Invalid query" });
+      return;
+    }
+    const tasks = await prisma.task.findMany();
+    const fuse = new Fuse(tasks, {
+      keys: ["title", "color"],
+      threshold: 0.3,
+    });
+
+    const searchResults = fuse.search(query);
+    const formattedResults = searchResults.map((result) => result.item);
+
+    res.json(formattedResults);
+  } catch (error) {
+    console.error("Search error:", error);
+    res.status(500).json({ error: "Search failed" });
   }
 };
 

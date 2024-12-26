@@ -5,6 +5,7 @@ const router = express.Router();
 
 // Define routes
 router.get("/", taskController.getAllTasks);
+router.get("/search", taskController.searchTasks);
 router.get("/:id", taskController.getTaskById);
 router.post("/", taskController.createTask);
 router.put("/:id", taskController.updateTaskById);
